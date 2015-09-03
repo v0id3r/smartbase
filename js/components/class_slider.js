@@ -18,73 +18,87 @@ TVComponents.ClassSlider.prototype.onready = function() {
 	TVComponents.Slider.prototype.onready.call(this);
 	if (!this.data || !this.data.length) return;
 	this._setClasses();
-	this._selectMiddle();
 };
 
 TVComponents.ClassSlider.prototype._movie = function(is_first) {
 	TVComponents.Slider.prototype._movie.call(this, is_first);
 	this._setClasses();
-	this._selectMiddle();
 	return true;
 };
 
 TVComponents.ClassSlider.prototype._setClasses = function() {
-	var styles = '';
-	var item_class = '';
 	var els = this.container_el.children;
-	var els_length = els.length;
-
-	// прячем добавленный и вышедший элементы, чтобы избежать мелькания
-	els[0].style.visibility = 'hidden';
-	els[els_length-1].style.visibility = 'hidden';
-
-	var middle_index = (els_length-1)/2;
-	var middle_pos = this.is_horizontal ? TV.getSize(this.container_el).width/2 - TV.getSize(els[middle_index]).width/2 : TV.getSize(this.container_el).height/2 - TV.getSize(els[middle_index]).height/2;
-	var last_pos = middle_pos;
-
-	// обходим элементы от среднего до начала, устанавливаем класс, для класса считаем позицию, 
-	// каждый раз равную позиции последнего - distance - размер самого элемента 
-	var prev_pos = middle_pos;
-	for(var k = middle_index-1; k >= 0; k--) {
-		item_class = TVComponents.ClassSlider.prev_class+(1 - k - this.start_for_dynamic)+'-'+this.id ;
-		if (this.is_horizontal) {
-			prev_pos -= TV.getSize(els[k]).width + this.distance;
-			styles += '.'+item_class.replace(/ /g, '.')+' {left: '+prev_pos+'px; will-change: left, transform;} ';
-		} else {
-			prev_pos -= TV.getSize(els[k]).height + this.distance;
-			styles += '.'+item_class.replace(/ /g, '.')+' {top: '+prev_pos+'px; will-change: top, transform;} ';
+	if (!this.set_positions) {
+		for (var i=0; i < els.length; i++) {
+			var cl = TVComponents.ClassSlider.middle_class;
+			if (i < 1 - this.start_for_dynamic) cl = TVComponents.ClassSlider.prev_class+(1 - i - this.start_for_dynamic);
+			if (i > 1 - this.start_for_dynamic) cl = TVComponents.ClassSlider.next_class+(-1 + i + this.start_for_dynamic);
+			els[i].className = cl;
 		}
-		els[k].className = item_class;
-	}
-
-	// обходим элементы, начиная со среднего до конца, устанавливаем класс, для класса считаем позицию, 
-	// каждый раз равную позиции последнего + его размеру + distance
-	for(var j = middle_index; j < els_length; j++) {
-		item_class = (last_pos == middle_pos) ? TVComponents.ClassSlider.middle_class+'-'+this.id 
-			: TVComponents.ClassSlider.next_class+(-1 + j + this.start_for_dynamic)+'-'+this.id;
-		if (this.is_horizontal) {
-			styles += '.'+item_class.replace(/ /g, '.')+' {left: '+last_pos+'px; will-change: left, transform;} ';
-			last_pos += TV.getSize(els[j]).width + this.distance;
-		} else {
-			styles += '.'+item_class.replace(/ /g, '.')+' {top: '+last_pos+'px; will-change: top, transform;} ';
-			last_pos += TV.getSize(els[j]).height + this.distance;
+	} else {
+		var styles = '';
+		var item_class = '';
+		var els_length = els.length;
+	
+		// прячем добавленный и вышедший элементы, чтобы избежать мелькания
+		els[0].style.visibility = 'hidden';
+		els[els_length-1].style.visibility = 'hidden';
+	
+		var middle_index = (els_length-1)/2;
+		var middle_pos = this.is_horizontal ? TV.getSize(this.container_el).width/2 - TV.getSize(els[middle_index]).width/2 : TV.getSize(this.container_el).height/2 - TV.getSize(els[middle_index]).height/2;
+		var last_pos = middle_pos;
+	
+		// обходим элементы от среднего до начала, устанавливаем класс, для класса считаем позицию, 
+		// каждый раз равную позиции последнего - distance - размер самого элемента 
+		var prev_pos = middle_pos;
+		for(var k = middle_index-1; k >= 0; k--) {
+			item_class = TVComponents.ClassSlider.prev_class+(1 - k - this.start_for_dynamic)+'-'+this.id ;
+			if (this.is_horizontal) {
+				prev_pos -= TV.getSize(els[k]).width + this.distance;
+				styles += '.'+item_class.replace(/ /g, '.')+' {left: '+prev_pos+'px; will-change: left, transform;} ';
+			} else {
+				prev_pos -= TV.getSize(els[k]).height + this.distance;
+				styles += '.'+item_class.replace(/ /g, '.')+' {top: '+prev_pos+'px; will-change: top, transform;} ';
+			}
+			els[k].className = item_class;
 		}
-		els[j].className = item_class;
+	
+		// обходим элементы, начиная со среднего до конца, устанавливаем класс, для класса считаем позицию, 
+		// каждый раз равную позиции последнего + его размеру + distance
+		for(var j = middle_index; j < els_length; j++) {
+			item_class = (last_pos == middle_pos) ? TVComponents.ClassSlider.middle_class+'-'+this.id 
+				: TVComponents.ClassSlider.next_class+(-1 + j + this.start_for_dynamic)+'-'+this.id;
+			if (this.is_horizontal) {
+				styles += '.'+item_class.replace(/ /g, '.')+' {left: '+last_pos+'px; will-change: left, transform;} ';
+				last_pos += TV.getSize(els[j]).width + this.distance;
+			} else {
+				styles += '.'+item_class.replace(/ /g, '.')+' {top: '+last_pos+'px; will-change: top, transform;} ';
+				last_pos += TV.getSize(els[j]).height + this.distance;
+			}
+			els[j].className = item_class;
+		}
+		// если установлен атрибут positions=true, добавляем стили в документ
+		// иначе считаем, что позиции для классов определены в css 
+		if (this.set_positions) this._setStylesheet(styles);
+	
+		els[0].style.visibility = 'visible';
+		els[els_length-1].style.visibility = 'visible';
 	}
-	// если установлен атрибут positions=true, добавляем стили в документ
-	// иначе считаем, что позиции для классов определены в css 
-	if (this.set_positions) this._setStylesheet(styles);
-
-	els[0].style.visibility = 'visible';
-	els[els_length-1].style.visibility = 'visible';
+	this._setStartButton();
 };
 
-TVComponents.ClassSlider.prototype._selectMiddle = function() {
+
+TVComponents.ClassSlider.prototype._setStartButton = function() {
+	// центральная кнопка
 	for (var n in this.buttons) {
 		if (this.buttons[n].el.className.indexOf(TVComponents.ClassSlider.middle_class) > -1) {
-			this.buttons[n].el.onmouseover();
+			this.buttons._start_btn = this.buttons[n];
 			break;
 		}
+	}
+	// еслик компонент активен - на центральную кнопку устанавливаем курсор
+	if (this.adjacent_buttons._hover_btn == this) {
+		this.buttons._start_btn.onmouseover();
 	}
 };
 
