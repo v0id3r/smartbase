@@ -25,7 +25,7 @@ TVComponents.GridSlider.prototype.onready = function() {
 TVComponents.GridSlider.prototype._movie = function(is_first) {
 	if (is_first && this.start_position <= 0) return;
 	if (!is_first && this.start_position + this.count >= this.data.length) return;
-	this.buttons._hover_btn && this.buttons._hover_btn.onmouseout();
+	//this.buttons._hover_btn && this.buttons._hover_btn.onmouseout();
 	
 	var max = 0, curr = null;
 	for (var i=0; i < (this.is_vertical ? this.box_x : this.box_y); i++) {

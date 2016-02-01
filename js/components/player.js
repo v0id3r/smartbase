@@ -157,6 +157,7 @@ TVComponents.Player.prototype.onready = function() {
 
 // ловим кнопки
 TVComponents.Player.prototype.onAnyKey = function(key_code) {
+	if (this.data.allow_seek == false && (key_code == TV.keys.rw || key_code == TV.keys.ff)) return;
 	//TV.log('onAnyKey', key_code,  this._hidden_panel)
 	// если идет отсчет неактивности - начинаем его с начала
 	if (this._inactive_timer && this.state == 'play' && !this._hidden_panel) this.startInactive();
@@ -187,7 +188,7 @@ TVComponents.Player.prototype.onAnyKey = function(key_code) {
 };
 
 TVComponents.Player.prototype.btnProcessSeek = function(direction) {
-	if (this._where_to_seek === null && this.state != 'play' || this.buffering) return;
+	if (this._where_to_seek === null && this.state != 'play' || this.buffering || this.data.allow_seek == false) return;
 	TV.show('[data-id="player_loader"]', this.el);
 	if (this.state == 'play') this.pause();
 	if (this._where_to_seek === null) this._where_to_seek = this.curr_time;
@@ -208,6 +209,8 @@ TVComponents.Player.prototype.btnProcessSeek = function(direction) {
 	this._where_to_seek += step * direction;
 	if (this._where_to_seek >= (this.data.max_seek || this.duration)) {
 		this._where_to_seek = this.data.max_seek || this.duration;
+		//if (this._where_to_seek - 10 > 0)
+		//	this._where_to_seek -= 60;
 	} else if (this._where_to_seek <= 0) {
 		this._where_to_seek = 0;
 	} else {
@@ -382,14 +385,23 @@ TVComponents.Player.prototype.stop = function() {
 };
 
 TVComponents.Player.prototype.seek = function(seek_time, show) {
-	TV.log('seek', 'allow_seek='+this.data.allow_seek, 'seek_time='+seek_time, 'max_seek='+(this.data.max_seek || this.duration));
+	TV.log('### seek', 'allow_seek='+this.data.allow_seek, 'seek_time='+seek_time, 'max_seek='+(this.data.max_seek || this.duration));
 	if (! this.data.allow_seek) return;
 	if (seek_time < 0) seek_time = 0;
 	var max_seek = this.data.max_seek || this.duration;
 	if (max_seek && seek_time > max_seek) seek_time = max_seek;
 	if (this.buffering || seek_time == this.curr_time) return;
+	TV.log('*** seek', 'allow_seek='+this.data.allow_seek, 'seek_time='+seek_time, 'max_seek='+(this.data.max_seek || this.duration));
 	if (show) this.showSeek(seek_time);
+	TV.log('Start seek');
 	this.video.seek(seek_time*1000);
+/*	
+	setTimeout(function() {
+		TV.log('*** And actualy seek', seek_time - this.curr_time);
+		seek_time -= 10;
+		this.video.seek(seek_time*1000);
+	}.bind(this), 500);
+*/
 	this.curr_time = seek_time;
 };
 

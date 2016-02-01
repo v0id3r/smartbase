@@ -96,6 +96,8 @@ TV.prototype.onLoad = function() {
 
 	this.show();
 	document.addEventListener('keydown', this.onKey.bind(this), false);
+	document.addEventListener('keyup', this.onKeyUp.bind(this), false);
+	document.addEventListener('keypress', this.onKeyPress.bind(this), false);
 	// unavaliable because of "trustLevel":"netcast" in appinfo.json
 	// if (TV.platform.isWebOs) {
 	// 	window.addEventListener("popstate", this.onPopState);
@@ -265,13 +267,25 @@ TV.prototype.onKeyBack = function() {
 };
 
 TV.prototype.exit = function() {
-	if (TV.platform.isSamsung) {
+	if (TV.platform.isTizen) {
+		tizen.application.getCurrentApplication().exit();	
+	} else if (TV.platform.isSamsung) {
 		TV.widget_api.sendReturnEvent();
 	} else if (TV.platform.isLG || TV.platform.isWebOs) {
 		window.NetCastBack();
 	} else if (TV.platform.isPhilips) {
 		history.go(-999);
 	}
+};
+
+TV.prototype.onKeyUp = function(event) {
+	var key_code = event.keyCode;
+	var page_or_popup = this.curr_popup || this.curr_page;
+	page_or_popup.onAnyKeyUp && page_or_popup.onAnyKeyUp(key_code);
+};
+
+TV.prototype.onKeyPress = function(event) {
+	//
 };
 
 TV.prototype.onKey = function(event) {
@@ -369,6 +383,9 @@ TV.prototype.isSupportVolumeActions = function() {
 	if (typeof (webOS) != "undefined" && webOS.service)
 		return true;
 
+	if (TV.platform.isTizen)
+    return true;
+
 	return false;
 }
 
@@ -397,6 +414,9 @@ TV.prototype.setVolumeUp = function() {
 		});
 	};
 
+	if (TV.platform.isTizen) {
+		tizen.tvaudiocontrol.setVolumeUp();
+	}
 };
 
 TV.prototype.setVolumeDown = function() {
@@ -423,13 +443,40 @@ TV.prototype.setVolumeDown = function() {
         });
     };
 
+	if (TV.platform.isTizen) {
+		tizen.tvaudiocontrol.setVolumeDown();
+	}
 };
 
 TV.prototype.getVolume = function() {
 	//samsung
     var el = TV.el('pluginAudio');
     if (el) {
-		return el.GetVolume();
+			return el.GetVolume();
     }
+  if (TV.platform.isTizen) {
+		return tizen.tvaudiocontrol.getVolume();
+	}
 	return undefined;
 };
+
+TV.prototype.setMute = function() {
+  // Tizen
+  if (TV.platform.isTizen) {
+    if (tizen.tvaudiocontrol.isMute()) {
+      return tizen.tvaudiocontrol.setMute(false);
+    } else {
+      return tizen.tvaudiocontrol.setMute(true);
+    } 
+  }
+
+  // Samsung
+  var el = TV.el('pluginAudio');
+  if (el) {
+    if (el.GetSystemMute()) {
+      return el.SetSystemMute(0);
+    } else {
+      return el.SetSystemMute(1);
+    }
+  }
+}
