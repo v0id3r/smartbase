@@ -40,7 +40,7 @@ TVComponents.Slider.prototype.onready = function() {
 	this.container_el = TV.el('[data-type="slider_container"]', this.el);
 	TV.setHTML(this.container_el, '');
 	if (this.data.length == 0) {
-		if (this.use_none) this._addNone();
+		this.use_none ? this._addNone() : this.disable();
 		return;
 	}
 	
